@@ -3,20 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Free online PCB trace width calculator based on IPC-2152 standard. Accurately calculates trace width for different currents, temperature rises and copper thickness, supports inner/outer layer switching and unit conversion.">
-    <meta name="keywords" content="PCB trace width,IPC-2152,circuit board design,current calculation,trace calculator">
+    <meta name="description" content="Free online PCB trace width calculator based on IPC-2152 standard. Accurately calculates minimum, recommended and maximum trace widths for different currents (1A-30A), temperature rises (1°C-100°C) and copper thickness (1oz/2oz).">
+    <meta name="keywords" content="PCB trace width calculator, IPC-2152 standard, circuit board design, current capacity calculator, trace width for current, PCB design tool">
     <meta name="author" content="PCB Design Tools">
     <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://pcb-trace-calculator.example.com" />
+    <link rel="canonical" href="https://github.com/hommerzz/PCB-Trace-Width-Calculator" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://hommerzz.github.io/PCB-Trace-Width-Calculator/">
+    <meta property="og:title" content="PCB Trace Width Calculator | IPC-2152 Standard">
+    <meta property="og:description" content="Free online calculator for PCB trace widths based on IPC-2152 standard. Calculate minimum, recommended and maximum trace widths for your PCB design.">
+    <meta property="og:image" content="https://hommerzz.github.io/PCB-Trace-Width-Calculator/assets/preview.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://hommerzz.github.io/PCB-Trace-Width-Calculator/">
+    <meta property="twitter:title" content="PCB Trace Width Calculator | IPC-2152 Standard">
+    <meta property="twitter:description" content="Free online calculator for PCB trace widths based on IPC-2152 standard. Calculate minimum, recommended and maximum trace widths for your PCB design.">
+    <meta property="twitter:image" content="https://hommerzz.github.io/PCB-Trace-Width-Calculator/assets/preview.png">
+    
+    <link rel="icon" href="/favicon.ico">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
     <title>PCB Trace Width Calculator | IPC-2152 Standard | Free Online Tool</title>
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebApplication",
+      "@type": ["WebApplication", "HowToTool"],
       "name": "PCB Trace Width Calculator",
-      "description": "PCB trace width calculation tool based on IPC-2152 standard",
+      "description": "Calculate optimal PCB trace widths based on IPC-2152 standards for different currents, temperature rises and copper thicknesses",
       "applicationCategory": "DesignApplication",
-      "operatingSystem": "Any"
+      "operatingSystem": "Any",
+      "step": {
+        "@type": "HowToStep",
+        "text": "Enter current value in amperes (A)"
+      },
+      "tool": {
+        "@type": "HowToTool",
+        "name": "Current Input"
+      },
+      "supply": {
+        "@type": "HowToSupply",
+        "name": "Temperature Rise and Copper Thickness"
+      },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://github.com/hommerzz/PCB-Trace-Width-Calculator"
+        },
+        "query-input": "required name=search_term_string"
+      }
     }
     </script>
     <script src="https://cdn.tailwindcss.com/3.4.16"></script>
