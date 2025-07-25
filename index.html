@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Free online PCB trace width calculator based on IPC-2152 standard. Accurately calculates trace width for different currents, temperature rises and copper thickness, supports inner/outer layer switching and unit conversion.">
+    <meta name="keywords" content="PCB trace width,IPC-2152,circuit board design,current calculation,trace calculator">
+    <meta name="author" content="PCB Design Tools">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://pcb-trace-calculator.example.com" />
+    <title>PCB Trace Width Calculator | IPC-2152 Standard | Free Online Tool</title>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "PCB Trace Width Calculator",
+      "description": "PCB trace width calculation tool based on IPC-2152 standard",
+      "applicationCategory": "DesignApplication",
+      "operatingSystem": "Any"
+    }
+    </script>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <script>tailwind.config={theme:{extend:{colors:{primary:'#57b5e7',secondary:'#8dd3c7'},borderRadius:{'none':'0px','sm':'4px',DEFAULT:'8px','md':'12px','lg':'16px','xl':'20px','2xl':'24px','3xl':'32px','full':'9999px','button':'8px'}}}}</script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+    <style>
+        :where([class^="ri-"])::before { content: "\f3c2"; }
+        
+        .trace-diagram {
+            animation: pulse 2s infinite;
+        }
+        
+        .current-flow {
+            animation: flow 3s linear infinite;
+        }
+        
+        @keyframes flow {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        .temp-indicator {
+            transition: all 0.3s ease;
+        }
+        
+        .temp-green { background: linear-gradient(135deg, #10b981, #34d399); }
+        .temp-yellow { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+        .temp-red { background: linear-gradient(135deg, #ef4444, #f87171); }
+        
+        .result-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .result-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        
+        .custom-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        
+        .custom-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #57b5e7;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        .preset-btn {
+            transition: all 0.2s ease;
+        }
+        
+        .preset-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .preset-btn.active {
+            background: #57b5e7;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-gray-900 mb-4">PCB Trace Width Calculator</h1>
+            <p class="text-lg text-gray-600 mb-6">Based on IPC-2152 Standard for Accurate PCB Design</p>
+            <div class="flex justify-center gap-4">
+                <button id="formulaBtn" class="px-6 py-3 bg-primary text-white !rounded-button whitespace-nowrap hover:bg-blue-600 transition-colors">
+                    <div class="w-5 h-5 flex items-center justify-center inline-block mr-2">
+                        <i class="ri-formula-line"></i>
+                    </div>
+                    Show Formula
+                </button>
+                <button id="historyBtn" class="px-6 py-3 bg-gray-200 text-gray-700 !rounded-button whitespace-nowrap hover:bg-gray-300 transition-colors">
+                    <div class="w-5 h-5 flex items-center justify-center inline-block mr-2">
+                        <i class="ri-history-line"></i>
+                    </div>
+                    History
+                </button>
+            </div>
+        </header>
+
+        <div class="grid lg:grid-cols-2 gap-8">
+            <div class="space-y-8">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">Input Parameters</h2>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Current (A)</label>
+                            <div class="flex gap-2 mb-3">
+                                <button class="preset-btn px-4 py-2 border border-gray-300 !rounded-button text-sm whitespace-nowrap" data-current="1">1A</button>
+                                <button class="preset-btn px-4 py-2 border border-gray-300 !rounded-button text-sm whitespace-nowrap" data-current="3">3A</button>
+                                <button class="preset-btn px-4 py-2 border border-gray-300 !rounded-button text-sm whitespace-nowrap" data-current="5">5A</button>
+                            </div>
+                            <input type="number" id="currentInput" class="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="Enter current value" value="3" step="0.1" min="0.1">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Temperature Rise (°C)</label>
+                            <input type="number" id="tempRiseInput" class="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="Enter temperature rise" value="10" step="1" min="1" max="100">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Copper Thickness</label>
+                            <select id="copperThickness" class="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent pr-8">
+                                <option value="1">1 oz (35 μm)</option>
+                                <option value="2">2 oz (70 μm)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">PCB Layer Type</label>
+                            <div class="flex items-center gap-4">
+                                <span class="text-sm text-gray-600">Inner Layer</span>
+                                <label class="custom-switch">
+                                    <input type="checkbox" id="layerToggle">
+                                    <span class="slider"></span>
+                                </label>
+                                <span class="text-sm text-gray-600">Outer Layer</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Unit System</label>
+                            <select id="unitSystem" class="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent pr-8">
+                                <option value="mm">Millimeters (mm)</option>
+                                <option value="mil">Mils (mil)</option>
+                                <option value="inch">Inches (in)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">Trace Cross-Section</h3>
+                    <div class="flex justify-center">
+                        <svg width="300" height="200" viewBox="0 0 300 200" class="trace-diagram">
+                            <defs>
+                                <linearGradient id="copperGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" style="stop-color:#CD7F32;stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:#B87333;stop-opacity:1" />
+                                </linearGradient>
+                                <linearGradient id="currentFlow" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" style="stop-color:#57b5e7;stop-opacity:0" />
+                                    <stop offset="50%" style="stop-color:#57b5e7;stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:#57b5e7;stop-opacity:0" />
+                                </linearGradient>
+                            </defs>
+                            
+                            <rect x="50" y="120" width="200" height="20" fill="#2d5016" opacity="0.3" />
+                            <text x="150" y="155" text-anchor="middle" class="text-xs fill-gray-600">PCB Substrate</text>
+                            
+                            <rect id="traceRect" x="100" y="100" width="100" height="20" fill="url(#copperGradient)" />
+                            <text x="150" y="95" text-anchor="middle" class="text-xs fill-gray-700">Copper Trace</text>
+                            
+                            <rect id="currentFlow" x="100" y="105" width="20" height="10" fill="url(#currentFlow)" class="current-flow" />
+                            
+                            <text x="50" y="115" class="text-xs fill-gray-600">Width</text>
+                            <line x1="100" y1="85" x2="200" y2="85" stroke="#666" stroke-width="1" />
+                            <line x1="100" y1="80" x2="100" y2="90" stroke="#666" stroke-width="1" />
+                            <line x1="200" y1="80" x2="200" y2="90" stroke="#666" stroke-width="1" />
+                            
+                            <text x="220" y="115" class="text-xs fill-gray-600">Thickness</text>
+                            <line x1="210" y1="100" x2="210" y2="120" stroke="#666" stroke-width="1" />
+                            <line x1="205" y1="100" x2="215" y2="100" stroke="#666" stroke-width="1" />
+                            <line x1="205" y1="120" x2="215" y2="120" stroke="#666" stroke-width="1" />
+                            
+                            <text x="150" y="180" text-anchor="middle" class="text-sm fill-gray-700">Current Flow Direction →</text>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-8">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-6">Calculation Results</h3>
+                    <div class="space-y-4">
+                        <div class="result-card bg-red-50 border border-red-200 rounded-lg p-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="text-lg font-semibold text-red-800">Minimum Safe Width</h4>
+                                    <p class="text-sm text-red-600">Absolute minimum for operation</p>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-2xl font-bold text-red-800" id="minWidth">0.5 mm</div>
+                                    <div class="temp-indicator temp-red w-4 h-4 rounded-full ml-auto mt-1"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="result-card bg-green-50 border-2 border-green-300 rounded-lg p-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="text-lg font-semibold text-green-800">Recommended Width</h4>
+                                    <p class="text-sm text-green-600">Optimal for reliable operation</p>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-2xl font-bold text-green-800" id="recWidth">0.8 mm</div>
+                                    <div class="temp-indicator temp-green w-4 h-4 rounded-full ml-auto mt-1"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="result-card bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="text-lg font-semibold text-blue-800">Maximum Safe Width</h4>
+                                    <p class="text-sm text-blue-600">Conservative with safety margin</p>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-2xl font-bold text-blue-800" id="maxWidth">1.2 mm</div>
+                                    <div class="temp-indicator temp-green w-4 h-4 rounded-full ml-auto mt-1"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 pt-6 border-t border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">Temperature Rise: <span id="currentTempRise" class="font-semibold">10°C</span></p>
+                                <p class="text-sm text-gray-600">Layer Type: <span id="currentLayerType" class="font-semibold">Inner Layer</span></p>
+                            </div>
+                            <button id="saveResult" class="px-4 py-2 bg-secondary text-white !rounded-button whitespace-nowrap hover:bg-green-600 transition-colors">
+                                <div class="w-4 h-4 flex items-center justify-center inline-block mr-2">
+                                    <i class="ri-save-line"></i>
+                                </div>
+                                Save Result
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">Temperature Safety Guide</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3">
+                            <div class="temp-indicator temp-green w-4 h-4 rounded-full"></div>
+                            <span class="text-sm text-gray-700">≤ 10°C: Excellent thermal performance</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="temp-indicator temp-yellow w-4 h-4 rounded-full"></div>
+                            <span class="text-sm text-gray-700">10-30°C: Good thermal performance</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="temp-indicator temp-red w-4 h-4 rounded-full"></div>
+                            <span class="text-sm text-gray-700">> 30°C: Consider wider traces</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="formulaModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-8 max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-900">IPC-2152 Calculation Formula</h3>
+                <button id="closeModal" class="text-gray-500 hover:text-gray-700">
+                    <div class="w-6 h-6 flex items-center justify-center">
+                        <i class="ri-close-line ri-xl"></i>
+                    </div>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-gray-900 mb-2">Base Formula:</h4>
+                    <p class="font-mono text-sm">W = (I / (k × ΔT^b))^(1/c) × A</p>
+                </div>
+                <div class="space-y-2">
+                    <p><strong>Where:</strong></p>
+                    <ul class="list-disc pl-6 space-y-1 text-sm">
+                        <li><strong>W</strong> = Trace width (mm)</li>
+                        <li><strong>I</strong> = Current (A)</li>
+                        <li><strong>ΔT</strong> = Temperature rise (°C)</li>
+                        <li><strong>k, b, c</strong> = Constants based on layer type and copper thickness</li>
+                        <li><strong>A</strong> = Cross-sectional area factor</li>
+                    </ul>
+                </div>
+                <div class="bg-blue-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-blue-900 mb-2">Constants for Different Configurations:</h4>
+                    <div class="text-sm space-y-1">
+                        <p><strong>Inner Layer:</strong> k=0.024, b=0.44, c=0.725</p>
+                        <p><strong>Outer Layer:</strong> k=0.048, b=0.44, c=0.725</p>
+                    </div>
+                </div>
+                <div class="bg-yellow-50 p-4 rounded-lg">
+                    <h4 class="font-semibold text-yellow-900 mb-2">Safety Margins:</h4>
+                    <div class="text-sm space-y-1">
+                        <p><strong>Minimum:</strong> Calculated width × 1.0</p>
+                        <p><strong>Recommended:</strong> Calculated width × 1.5</p>
+                        <p><strong>Maximum Safe:</strong> Calculated width × 2.0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="historyPanel" class="fixed right-0 top-0 h-full w-80 bg-white shadow-xl transform translate-x-full transition-transform duration-300 z-40">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-900">Calculation History</h3>
+                <button id="closeHistory" class="text-gray-500 hover:text-gray-700">
+                    <div class="w-6 h-6 flex items-center justify-center">
+                        <i class="ri-close-line ri-xl"></i>
+                    </div>
+                </button>
+            </div>
+        </div>
+        <div class="p-6 overflow-y-auto h-full">
+            <div id="historyList" class="space-y-4">
+                <p class="text-gray-500 text-center">No calculations saved yet</p>
+            </div>
+            <button id="clearHistory" class="w-full mt-6 px-4 py-2 bg-red-500 text-white !rounded-button whitespace-nowrap hover:bg-red-600 transition-colors">
+                Clear All History
+            </button>
+        </div>
+    </div>
+
+    <footer class="mt-16 py-8 border-t border-gray-200">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-sm text-gray-600 mb-2">
+                <strong>Disclaimer:</strong> This calculator provides estimates based on IPC-2152 standard. 
+                Always verify calculations and consult with PCB manufacturers for critical applications.
+            </p>
+            <p class="text-xs text-gray-500">
+                No tracking • No data collection • Calculations performed locally in your browser
+            </p>
+        </div>
+    </footer>
+
+    <script id="calculationLogic">
+        class PCBCalculator {
+            constructor() {
+                this.constants = {
+                    inner: { k: 0.024, b: 0.44, c: 0.725 },
+                    outer: { k: 0.048, b: 0.44, c: 0.725 }
+                };
+                this.unitConversions = {
+                    mm: 1,
+                    mil: 39.3701,
+                    inch: 0.0393701
+                };
+            }
+
+            calculateWidth(current, tempRise, copperThickness, isOuter) {
+                const constants = isOuter ? this.constants.outer : this.constants.inner;
+                const thicknessFactor = copperThickness === 2 ? 1.4 : 1.0;
+                
+                const baseWidth = Math.pow(current / (constants.k * Math.pow(tempRise, constants.b)), 1/constants.c) * thicknessFactor;
+                
+                return {
+                    minimum: baseWidth,
+                    recommended: baseWidth * 1.5,
+                    maximum: baseWidth * 2.0
+                };
+            }
+
+            convertUnit(value, fromUnit, toUnit) {
+                const mmValue = value / this.unitConversions[fromUnit];
+                return mmValue * this.unitConversions[toUnit];
+            }
+
+            formatValue(value, unit) {
+                const precision = unit === 'mil' ? 0 : unit === 'inch' ? 4 : 2;
+                return `${value.toFixed(precision)} ${unit}`;
+            }
+        }
+
+        const calculator = new PCBCalculator();
+        let currentResults = null;
+    </script>
+
+    <script id="uiInteractions">
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentInput = document.getElementById('currentInput');
+            const tempRiseInput = document.getElementById('tempRiseInput');
+            const copperThickness = document.getElementById('copperThickness');
+            const layerToggle = document.getElementById('layerToggle');
+            const unitSystem = document.getElementById('unitSystem');
+            const presetBtns = document.querySelectorAll('.preset-btn');
+            
+            const minWidth = document.getElementById('minWidth');
+            const recWidth = document.getElementById('recWidth');
+            const maxWidth = document.getElementById('maxWidth');
+            const currentTempRise = document.getElementById('currentTempRise');
+            const currentLayerType = document.getElementById('currentLayerType');
+            const traceRect = document.getElementById('traceRect');
+            presetBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    presetBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentInput.value = this.dataset.current;
+                    calculateAndUpdate();
+                });
+            });
+
+            function calculateAndUpdate() {
+                const current = parseFloat(currentInput.value) || 0;
+                const tempRise = parseFloat(tempRiseInput.value) || 10;
+                const copperOz = parseInt(copperThickness.value);
+                const isOuter = layerToggle.checked;
+                const unit = unitSystem.value;
+
+                if (current <= 0) return;
+                const results = calculator.calculateWidth(current, tempRise, copperOz, isOuter);
+                currentResults = { current, tempRise, copperOz, isOuter, unit, results };
+                minWidth.textContent = calculator.formatValue(
+                    calculator.convertUnit(results.minimum, 'mm', unit), unit
+                );
+                recWidth.textContent = calculator.formatValue(
+                    calculator.convertUnit(results.recommended, 'mm', unit), unit
+                );
+                maxWidth.textContent = calculator.formatValue(
+                    calculator.convertUnit(results.maximum, 'mm', unit), unit
+                );
+
+                currentTempRise.textContent = `${tempRise}°C`;
+                currentLayerType.textContent = isOuter ? 'Outer Layer' : 'Inner Layer';
+                const widthPx = Math.min(200, Math.max(50, results.recommended * 20));
+                traceRect.setAttribute('width', widthPx);
+                traceRect.setAttribute('x', 150 - widthPx/2);
+
+                updateTemperatureIndicators(tempRise);
+            }
+            function updateTemperatureIndicators(tempRise) {
+                const indicators = document.querySelectorAll('.temp-indicator');
+                indicators.forEach(indicator => {
+                    indicator.className = 'temp-indicator w-4 h-4 rounded-full';
+                    if (tempRise <= 10) {
+                        indicator.classList.add('temp-green');
+                    } else if (tempRise <= 30) {
+                        indicator.classList.add('temp-yellow');
+                    } else {
+                        indicator.classList.add('temp-red');
+                    }
+                });
+            }
+
+            [currentInput, tempRiseInput, copperThickness, layerToggle, unitSystem].forEach(element => {
+                element.addEventListener('change', calculateAndUpdate);
+                element.addEventListener('input', calculateAndUpdate);
+            });
+
+            calculateAndUpdate();
+        });
+    </script>
+
+    <script id="modalHandlers">
+        document.addEventListener('DOMContentLoaded', function() {
+            const formulaBtn = document.getElementById('formulaBtn');
+            const formulaModal = document.getElementById('formulaModal');
+            const closeModal = document.getElementById('closeModal');
+            const historyBtn = document.getElementById('historyBtn');
+            const historyPanel = document.getElementById('historyPanel');
+            const closeHistory = document.getElementById('closeHistory');
+            formulaBtn.addEventListener('click', function() {
+                formulaModal.classList.remove('hidden');
+                formulaModal.classList.add('flex');
+            });
+
+            closeModal.addEventListener('click', function() {
+                formulaModal.classList.add('hidden');
+                formulaModal.classList.remove('flex');
+            });
+
+            formulaModal.addEventListener('click', function(e) {
+                if (e.target === formulaModal) {
+                    formulaModal.classList.add('hidden');
+                    formulaModal.classList.remove('flex');
+                }
+            });
+
+            historyBtn.addEventListener('click', function() {
+                historyPanel.classList.remove('translate-x-full');
+                loadHistory();
+            });
+
+            closeHistory.addEventListener('click', function() {
+                historyPanel.classList.add('translate-x-full');
+            });
+        });
+    </script>
+
+    <script id="historyManager">
+        document.addEventListener('DOMContentLoaded', function() {
+            const saveResult = document.getElementById('saveResult');
+            const historyList = document.getElementById('historyList');
+            const clearHistory = document.getElementById('clearHistory');
+
+            function saveToHistory() {
+                if (!currentResults) return;
+                const history = JSON.parse(localStorage.getItem('pcbCalculatorHistory') || '[]');
+                const newEntry = {
+                    ...currentResults,
+                    timestamp: new Date().toISOString(),
+                    id: Date.now()
+                };
+
+                history.unshift(newEntry);
+                if (history.length > 50) history.pop();
+
+                localStorage.setItem('pcbCalculatorHistory', JSON.stringify(history));
+                showSaveNotification();
+            }
+
+            function loadHistory() {
+                const history = JSON.parse(localStorage.getItem('pcbCalculatorHistory') || '[]');
+                
+                if (history.length === 0) {
+                    historyList.innerHTML = '<p class="text-gray-500 text-center">No calculations saved yet</p>';
+                    return;
+                }
+
+                historyList.innerHTML = history.map(entry => `
+                    <div class="bg-gray-50 rounded-lg p-4 border">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="text-sm font-medium text-gray-900">
+                                ${entry.current}A, ${entry.tempRise}°C, ${entry.copperOz}oz
+                            </div>
+                            <div class="text-xs text-gray-500">
+                                ${new Date(entry.timestamp).toLocaleDateString()}
+                            </div>
+                        </div>
+                        <div class="text-sm text-gray-600">
+                            ${entry.isOuter ? 'Outer' : 'Inner'} Layer
+                        </div>
+                        <div class="text-sm font-medium text-primary mt-1">
+                            Recommended: ${calculator.formatValue(
+                                calculator.convertUnit(entry.results.recommended, 'mm', entry.unit), 
+                                entry.unit
+                            )}
+                        </div>
+                    </div>
+                `).join('');
+            }
+            function showSaveNotification() {
+                const notification = document.createElement('div');
+                notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+                notification.textContent = 'Calculation saved to history!';
+                document.body.appendChild(notification);
+                setTimeout(() => {
+                    notification.remove();
+                }, 3000);
+            }
+
+            saveResult.addEventListener('click', saveToHistory);
+            clearHistory.addEventListener('click', function() {
+                if (confirm('Are you sure you want to clear all calculation history?')) {
+                    localStorage.removeItem('pcbCalculatorHistory');
+                    loadHistory();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
